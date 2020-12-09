@@ -1533,8 +1533,133 @@ fit_best %>%
 ```
 Figure 10.13: Forecasts of monthly insurance quotes, assuming that the future advertising expenditure is 8 units in each future month.
 
+#**Chapter 11 Forecasting hierarchical and grouped time series**
+```{r}
+library(fpp3)
+```
+
+11.4 Forecasting Australian domestic tourism
+```{r}
+tourism_full <- tourism %>%
+  aggregate_key((State / Region) * Purpose, Trips = sum(Trips))
+fit <- tourism_full %>%
+  filter(year(Quarter) <= 2015) %>%
+  model(base = ETS(Trips)) %>%
+  reconcile(
+    bu = bottom_up(base),
+    ols = min_trace(base, method = "ols"),
+    mint = min_trace(base, method = "mint_shrink"),
+  )
+```
+
+```{r}
+fc <- fit %>% forecast(h = "2 years")
+```
+
+```{r}
+fc %>%
+  filter(is_aggregated(Region), is_aggregated(Purpose)) %>%
+  autoplot(
+    tourism_full %>% filter(year(Quarter) >= 2011),
+    level = NULL
+  ) +
+  ylab("Trips ('000)") +
+  facet_wrap(vars(State), scales = "free_y")
+```
+
+
+```{r}
+fc %>%
+  filter(is_aggregated(State), !is_aggregated(Purpose)) %>%
+  autoplot(
+    tourism_full %>% filter(year(Quarter) >= 2011),
+    level = NULL
+  ) +
+  ylab("Trips ('000)") +
+  facet_wrap(vars(Purpose), scales = "free_y")
+```
+
+
+```{r}
+fc %>%
+  filter(is_aggregated(State), is_aggregated(Purpose)) %>%
+  accuracy(
+    data = tourism_full,
+    measures = list(rmse = RMSE, mase = MASE)
+  ) %>%
+  group_by(.model) %>%
+  summarise(rmse = mean(rmse), mase = mean(mase))
+#> # A tibble: 4 x 3
+#>   .model  rmse  mase
+#>   <chr>  <dbl> <dbl>
+#> 1 base   1721.  1.53
+#> 2 bu     3070.  3.16
+#> 3 mint   2157.  2.09
+#> 4 ols    1804.  1.63
+```
+# 11.6 Forecasting Australian prison population
+
+```{r}
+fit <- prison_gts %>%
+  filter(year(Quarter) <= 2014) %>%
+  model(base = ETS(Count)) %>%
+  reconcile(
+    bottom_up = bottom_up(base),
+    MinT = min_trace(base, method = "mint_shrink")
+  )
+fc <- fit %>% forecast(h = 8)
+fc %>%
+  filter(
+    is_aggregated(State), is_aggregated(Gender), is_aggregated(Legal)
+  ) %>%
+  autoplot(prison_gts, alpha = 0.7, level = 90) +
+  ylab("Number of prisoners ('000)") +
+  ggtitle("Australian prison population (total)")
+```
+
+
+```{r}
+fc %>%
+  filter(
+    .model %in% c("base", "MinT"),
+    !is_aggregated(State), is_aggregated(Legal), is_aggregated(Gender)
+  ) %>%
+  autoplot(
+    prison_gts %>% filter(year(Quarter) >= 2010),
+    alpha = 0.7, level = 90
+  ) +
+  ggtitle("Prison population (by state)") +
+  ylab("Number of prisoners ('000)") +
+  facet_wrap(vars(State), scales = "free_y", ncol = 4) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r}
+fc %>%
+  filter(
+    is_aggregated(State), is_aggregated(Gender), is_aggregated(Legal)
+  ) %>%
+  accuracy(data = prison_gts, measures = list(
+    mase = MASE,
+    crps = CRPS,
+    ss = skill_score(CRPS)
+  )) %>%
+  group_by(.model) %>%
+  summarise(mase = mean(mase), sspc = mean(ss) * 100)
+#> `summarise()` ungrouping output (override with `.groups` argument)
+#> # A tibble: 3 x 3
+#>   .model     mase  sspc
+#>   <chr>     <dbl> <dbl>
+#> 1 base      1.72   55.9
+#> 2 bottom_up 1.84   33.5
+#> 3 MinT      0.895  76.8
+```
+
+
 ```{r}
 ```
+
 
 ```{r}
 ```
