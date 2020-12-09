@@ -1,0 +1,1541 @@
+---
+title: "Time_series"
+output: html_document
+---
+```{r}
+#install.packages("fpp2")
+library(fpp2) # include forecast, expsmooth, fma
+```
+
+
+```{r}
+y <- ts(c(123,39,78,52,110), start=2012)
+y
+```
+
+```{r}
+head(melsyd)
+```
+
+```{r}
+autoplot(melsyd[,"Economy.Class"]) +
+  ggtitle("Economy class passengers: Melbourne-Sydney") +
+  xlab("Year") +
+  ylab("Thousands")
+```
+
+# 2.2 Time plots
+```{r}
+autoplot(a10) +
+  ggtitle("Antidiabetic drug sales") +
+  ylab("$ million") +
+  xlab("Year")
+```
+
+# 2.4 Seasonal plots
+```{r}
+ggseasonplot(a10, year.labels=TRUE, year.labels.left=TRUE) +
+  ylab("$ million") +
+  ggtitle("Seasonal plot: antidiabetic drug sales")
+```
+
+
+```{r}
+ggseasonplot(a10, polar=TRUE) +
+  ylab("$ million") +
+  ggtitle("Polar seasonal plot: antidiabetic drug sales")
+```
+```{r}
+beer <- window(ausbeer,start=1992)
+autoplot(beer)
+```
+
+
+```{r}
+ggseasonplot(beer,year.labels=TRUE)
+```
+
+# 2.5 Seasonal subseries plots
+
+```{r}
+ggsubseriesplot(a10) +
+  ylab("$ million") +
+  ggtitle("Seasonal subseries plot: antidiabetic drug sales")
+```
+```{r}
+ggsubseriesplot(beer)
+```
+
+# 2.6 Scatterplots
+```{r}
+autoplot(elecdemand[,c("Demand","Temperature")], facets=TRUE) +
+  xlab("Year: 2014") + ylab("") +
+  ggtitle("Half-hourly electricity demand: Victoria, Australia")
+```
+
+```{r}
+qplot(Temperature, Demand, data=as.data.frame(elecdemand)) +
+  ylab("Demand (GW)") + xlab("Temperature (Celsius)")
+```
+This scatterplot helps us to visualise the relationship between the variables. It is clear that high demand occurs when temperatures are high due to the effect of air-conditioning. But there is also a heating effect, where demand increases for very low temperatures.
+
+# Correlation
+It is common to compute correlation coefficients to measure the strength of the relationship between two variables. The correlation between variables  x and  y is given by
+
+# Scatterplot matrices
+When there are several potential predictor variables, it is useful to plot each variable against each other variable. Consider the five time series shown in Figure 2.11, showing quarterly visitor numbers for five regions of New South Wales, Australia.
+```{r}
+autoplot(visnights[,1:5], facets=TRUE) +
+  ylab("Number of visitor nights each quarter (millions)")
+```
+To see the relationships between these five time series, we can plot each time series against the others. These plots can be arranged in a scatterplot matrix, as shown in Figure 2.12. (This plot requires the GGally package to be installed.)
+
+```{r}
+#install.packages("GGally")
+GGally::ggpairs(as.data.frame(visnights[,1:5]))
+```
+FROM : http://www.sthda.com/english/wiki/scatter-plot-matrices-r-base-graphs
+```{r}
+library(psych)
+pairs.panels(as.data.frame(visnights[,1:5]), 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+             )
+```
+
+# 2.7 Lag plots
+Plot time series against lagged versions of themselves. Helps visualizing ‘auto-dependence’ even when auto-correlations vanish.
+
+![Example outside](https://www.itl.nist.gov/div898/handbook/eda/gif/lagplot0.gif)
+A lag is a fixed time displacement. For example, given a data set Y1, Y2 ..., Yn, Y2 and Y7 have lag 5 since 7 - 2 = 5. Lag plots can be generated for any arbitrary lag, although the most commonly used lag is 1.
+A plot of lag 1 is a plot of the values of Yi versus Yi-1
+
+Vertical axis: Yi for all i
+Horizontal axis: Yi-1 for all i
+
+**FROM PACKT**
+A lag plot is a simplistic and non-statistical approach for analyzing the relationship between a series and its lags. As the name indicates, this method is based on data visualization tools, with the use of two-dimensional scatter plots for visualizing the series (typically on the y-axis) against the k lag of the series. Hence, each pair of points represents a combination of the series observations and their corresponding lagged values. As more points on the lag plot are closer to the 45 degree line, the higher the correlation will be between the series and the corresponding lag. The TSstudio package provides a customized function, ts_lags, for creating multiple lag plots. Let's use the function to plot the USgas series against its lags:
+
+![Example outside](https://static.packt-cdn.com/products/9781788629157/graphics/24d8f2c1-732d-438a-b83f-5a8abcdee62b.png)
+High correlation in lag 1 and lag 12
+
+
+```{r}
+beer2 <- window(ausbeer, start=1992)
+beer2
+```
+Figure 2.13 displays scatterplots of quarterly Australian beer production, where the horizontal axis shows lagged values of the time series. Each graph shows yt plotted against y t-k  for different values of k  
+
+
+```{r}
+gglagplot(beer2)
+```
+Here the colours indicate the quarter of the variable on the vertical axis. The lines connect points in chronological order. The relationship is strongly positive at lags 4 and 8, reflecting the strong seasonality in the data. The negative relationship seen for lags 2 and 6 occurs because peaks (in Q4) are plotted against troughs (in Q2)
+
+# 2.8 Autocorrelation
+
+Just as correlation measures the extent of a linear relationship between two variables, autocorrelation measures the linear relationship between lagged values of a time series.
+
+Covariance and correlation: measure extent of linear relationship between two variables (y and X).
+Autocovariance and autocorrelation: measure linear relationship between lagged values of a time series y.
+We measure the relationship between:
+yt and yt−1
+yt and yt−2
+yt and yt−3
+etc.
+```{r}
+beer2
+```
+
+
+```{r}
+ggAcf(beer2)
+```
+# Trend and seasonality in ACF plots
+
+When data have a trend, the autocorrelations for small lags tend to be large and positive because observations nearby in time are also nearby in size. So the ACF of trended time series tend to have positive values that slowly decrease as the lags increase.
+
+When data are seasonal, the autocorrelations will be larger for the seasonal lags (at multiples of the seasonal frequency) than for other lags.
+
+When data are both trended and seasonal, you see a combination of these effects. The monthly Australian electricity demand series plotted in Figure 2.15 shows both trend and seasonality. Its ACF is shown in Figure 2.16.
+
+```{r}
+aelec <- window(elec, start=1980)
+autoplot(aelec) + xlab("Year") + ylab("GWh")
+```
+
+
+```{r}
+ggAcf(aelec, lag=48)
+```
+```{r}
+autoplot(goog)
+```
+```{r}
+ggAcf(goog, lag.max=100)
+```
+
+# 2.9 White noise
+```{r}
+set.seed(30)
+y <- ts(rnorm(50))
+autoplot(y) + ggtitle("White noise")
+```
+
+
+```{r}
+ggAcf(y)
+```
+It is common to plot these bounds on a graph of the ACF (the blue dashed lines above). If one or more large spikes are outside these bounds, or if substantially more than 5% of spikes are outside these bounds, then the series is probably not white noise.
+
+All of the autocorrelation coefficients lie within these limits, confirming that the data are white noise.
+
+```{r}
+pigs2 <- window(pigs, start=1990)
+autoplot(pigs2) +
+xlab("Year") + ylab("thousands") +
+ggtitle("Number of pigs slaughtered in Victoria")
+```
+
+
+```{r}
+ggAcf(pigs2)
+```
+Monthly total number of pigs slaughtered in the state
+of Victoria, Australia, from January 1990 through
+August 1995. (Source: Australian Bureau of Statistics.)
+
+- Difficult to detect pattern in time plot.
+- ACF shows some significant autocorrelation at
+lags 1, 2, and 3.
+- r12 relatively large although not significant. This
+may indicate some slight seasonality
+
+These show the series is not a white noise 
+```{r}
+autoplot(goog)
+```
+```{r}
+autoplot(diff(goog))
+```
+
+```{r}
+dgoog <- diff(goog)
+ggAcf(dgoog)
+```
+
+# **Chapter 3 The forecaster’s toolbox**
+
+# 3.1 Some simple forecasting methods
+
+```{r}
+# Set training data from 1992 to 2007
+beer2 <- window(ausbeer,start=1992,end=c(2007,4))
+# Plot some forecasts
+autoplot(beer2) +
+  autolayer(meanf(beer2, h=11),
+    series="Mean", PI=FALSE) +
+  autolayer(naive(beer2, h=11),
+    series="Naïve", PI=FALSE) +
+  autolayer(snaive(beer2, h=11),
+    series="Seasonal naïve", PI=FALSE) +
+  ggtitle("Forecasts for quarterly beer production") +
+  xlab("Year") + ylab("Megalitres") +
+  guides(colour=guide_legend(title="Forecast"))
+```
+
+
+```{r}
+autoplot(goog200) +
+  autolayer(meanf(goog200, h=40),
+    series="Mean", PI=FALSE) +
+  autolayer(rwf(goog200, h=40),
+    series="Naïve", PI=FALSE) +
+  autolayer(rwf(goog200, drift=TRUE, h=40),
+    series="Drift", PI=FALSE) +
+  ggtitle("Google stock (daily ending 6 Dec 2013)") +
+  xlab("Day") + ylab("Closing Price (US$)") +
+  guides(colour=guide_legend(title="Forecast"))
+```
+Sometimes one of these simple methods will be the best forecasting method available; but in many cases, these methods will serve as benchmarks rather than the method of choice. That is, any forecasting methods we develop will be compared to these simple methods to ensure that the new method is better than these simple alternatives. If not, the new method is not worth considering.
+
+# 3.2 Transformations and adjustments
+
+Adjusting the historical data can often lead to a simpler forecasting task. Here, we deal with four kinds of adjustments: calendar adjustments, population adjustments, inflation adjustments and mathematical transformations. The purpose of these adjustments and transformations is to simplify the patterns in the historical data by removing known sources of variation or by making the pattern more consistent across the whole data set. Simpler patterns usually lead to more accurate forecasts.
+
+Calendar adjustments
+```{r}
+milk
+monthdays(milk)
+```
+
+```{r}
+dframe <- cbind(Monthly = milk,
+                DailyAverage = milk/monthdays(milk))
+head(dframe)
+```
+
+```{r}
+autoplot(dframe, facet=TRUE) +
+  xlab("Years") + ylab("Pounds") +
+  ggtitle("Milk production per cow")
+```
+Notice how much simpler the seasonal pattern is in the average daily production plot compared to the total monthly production plot. By looking at the average daily production instead of the total monthly production, we effectively remove the variation due to the different month lengths. Simpler patterns are usually easier to model and lead to more accurate forecasts.
+
+A similar adjustment can be done for sales data when the number of trading days in each month varies. In this case, the sales per trading day can be modelled instead of the total sales for each month.
+
+Bias adjustments
+```{r}
+fc <- rwf(eggs, drift=TRUE, lambda=0, h=50, level=80)
+fc2 <- rwf(eggs, drift=TRUE, lambda=0, h=50, level=80,
+  biasadj=TRUE)
+autoplot(eggs) +
+  autolayer(fc, series="Simple back transformation") +
+  autolayer(fc2, series="Bias adjusted", PI=FALSE) +
+  guides(colour=guide_legend(title="Forecast"))
+```
+The blue line in Figure 3.4 shows the forecast medians while the red line shows the forecast means. Notice how the skewed forecast distribution pulls up the point forecast when we use the bias adjustment.
+
+Bias adjustment is not done by default in the forecast package. If you want your forecasts to be means rather than medians, use the argument biasadj=TRUE when you select your Box-Cox transformation parameter.
+
+# 3.3 Residual diagnostics
+```{r}
+autoplot(goog200) +
+  xlab("Day") + ylab("Closing Price (US$)") +
+  ggtitle("Google Stock (daily ending 6 December 2013)")
+```
+```{r}
+autoplot(naive(goog200))
+```
+
+
+```{r}
+res <- residuals(naive(goog200))
+autoplot(res) + xlab("Day") + ylab("") +
+  ggtitle("Residuals from naïve method")
+```
+Figure 3.5: The daily Google stock price to 6 Dec 2013.
+
+```{r}
+gghistogram(res) + ggtitle("Histogram of residuals")
+```
+Figure 3.7: Histogram of the residuals from the naïve method applied to the Google stock price. The right tail seems a little too long for a normal distribution.
+
+```{r}
+ggAcf(res) + ggtitle("ACF of residuals")
+```
+Figure 3.8: ACF of the residuals from the naïve method applied to the Google stock price. The lack of correlation suggesting the forecasts are good.
+
+# Portmanteau tests for autocorrelation
+```{r}
+# lag=h and fitdf=K
+Box.test(res, lag=10, fitdf=0)
+#> 
+#>  Box-Pierce test
+#> 
+#> data:  res
+#> X-squared = 11, df = 10, p-value = 0.4
+
+Box.test(res,lag=10, fitdf=0, type="Lj")
+#> 
+#>  Box-Ljung test
+#> 
+#> data:  res
+#> X-squared = 11, df = 10, p-value = 0.4
+```
+For both  Qand  Q∗, the results are not significant (i.e., the  p -values are relatively large). Thus, we can conclude that the residuals are not distinguishable from a white noise series.
+
+```{r}
+checkresiduals(naive(goog200))
+#> 
+#>  Ljung-Box test
+#> 
+#> data:  Residuals from Naive method
+#> Q* = 11, df = 10, p-value = 0.4
+#> 
+#> Model df: 0.   Total lags used: 10
+```
+# 3.4 Evaluating forecast accuracy
+
+```{r}
+window(ausbeer, start=1995)
+```
+
+
+```{r}
+subset(ausbeer, start=length(ausbeer)-4*5)
+```
+
+
+```{r}
+subset(ausbeer, quarter = 1)
+```
+
+
+```{r}
+tail(ausbeer, 4*5)
+```
+
+
+```{r}
+beer2 <- window(ausbeer,start=1992,end=c(2007,4))
+beerfit1 <- meanf(beer2,h=10)
+beerfit2 <- rwf(beer2,h=10)
+beerfit3 <- snaive(beer2,h=10)
+autoplot(window(ausbeer, start=1992)) +
+  autolayer(beerfit1, series="Mean", PI=FALSE) +
+  autolayer(beerfit2, series="Naïve", PI=FALSE) +
+  autolayer(beerfit3, series="Seasonal naïve", PI=FALSE) +
+  xlab("Year") + ylab("Megalitres") +
+  ggtitle("Forecasts for quarterly beer production") +
+  guides(colour=guide_legend(title="Forecast"))
+```
+
+
+```{r}
+beer3 <- window(ausbeer, start=2008)
+accuracy(beerfit1, beer3)
+accuracy(beerfit2, beer3)
+accuracy(beerfit3, beer3)
+```
+
+
+```{r}
+googfc1 <- meanf(goog200, h=40)
+googfc2 <- rwf(goog200, h=40)
+googfc3 <- rwf(goog200, drift=TRUE, h=40)
+autoplot(subset(goog, end = 240)) +
+  autolayer(googfc1, PI=FALSE, series="Mean") +
+  autolayer(googfc2, PI=FALSE, series="Naïve") +
+  autolayer(googfc3, PI=FALSE, series="Drift") +
+  xlab("Day") + ylab("Closing Price (US$)") +
+  ggtitle("Google stock price (daily ending 6 Dec 13)") +
+  guides(colour=guide_legend(title="Forecast"))
+```
+
+
+```{r}
+googtest <- window(goog, start=201, end=240)
+accuracy(googfc1, googtest)
+accuracy(googfc2, googtest)
+accuracy(googfc3, googtest)
+```
+
+# Time series cross-validation
+```{r}
+goog200
+```
+tsCV computes the forecast errors obtained by applying forecastfunction to subsets of the time series y using a rolling forecast origin.
+
+rwf() returns forecasts and prediction intervals for a random walk with drift model applied to y. This is equivalent to an ARIMA(0,1,0) model with an optional drift coefficient. naive() is simply a wrapper to rwf() for simplicity. snaive() returns forecasts and prediction intervals from an ARIMA(0,0,0)(0,1,0)m model where m is the seasonal period.
+```{r}
+e <- tsCV(goog200, rwf, drift=TRUE, h=1)
+e
+```
+```{r}
+rwf(goog200, drift=TRUE)
+```
+
+```{r}
+sqrt(mean(e^2, na.rm=TRUE))
+#> [1] 6.233
+sqrt(mean(residuals(rwf(goog200, drift=TRUE))^2, na.rm=TRUE))
+#> [1] 6.169
+```
+Pipe operator
+```{r}
+goog200 %>% tsCV(forecastfunction=rwf, drift=TRUE, h=1) -> e
+e^2 %>% mean(na.rm=TRUE) %>% sqrt()
+#> [1] 6.233
+goog200 %>% rwf(drift=TRUE) %>% residuals() -> res
+res^2 %>% mean(na.rm=TRUE) %>% sqrt()
+#> [1] 6.169
+```
+Example: using tsCV()
+
+```{r}
+e <- tsCV(goog200, forecastfunction=naive, h=8)
+# Compute the MSE values and remove missing values
+mse <- colMeans(e^2, na.rm = T)
+# Plot the MSE values against the forecast horizon
+print("e value: ")
+e
+print("mse value: ")
+mse
+
+data.frame(h = 1:8, MSE = mse) %>%
+  ggplot(aes(x = h, y = MSE)) + geom_point()
+```
+#3.5 Prediction intervals
+
+Benchmark methods
+```{r}
+naive(goog200)
+```
+
+
+```{r}
+autoplot(naive(goog200))
+```
+
+Prediction intervals from bootstrapped residuals
+```{r}
+naive(goog200, bootstrap=TRUE)
+```
+
+# 3.6 The forecast package in R
+```{r}
+forecast(ausbeer, h=4)
+```
+#**Chapter 5 Time series regression models**
+#5.1 The linear model
+```{r}
+autoplot(uschange[,c("Consumption","Income")]) +
+  ylab("% change") + xlab("Year")
+```
+
+
+```{r}
+uschange %>%
+  as.data.frame() %>%
+  ggplot(aes(x=Income, y=Consumption)) +
+    ylab("Consumption (quarterly % change)") +
+    xlab("Income (quarterly % change)") +
+    geom_point() +
+    geom_smooth(method="lm", se=FALSE)
+#> `geom_smooth()` using formula 'y ~ x'
+```
+tslm is used to fit linear models to time series including trend and seasonality components.
+
+tslm is largely a wrapper for lm() except that it allows variables "trend" and "season" which are created on the fly from the time series characteristics of the data. The variable "trend" is a simple time trend and "season" is a factor indicating the season (e.g., the month or the quarter depending on the frequency of the data).
+
+```{r}
+tslm(Consumption ~ Income, data=uschange)
+#> 
+#> Call:
+#> tslm(formula = Consumption ~ Income, data = uschange)
+#> 
+#> Coefficients:
+#> (Intercept)       Income  
+#>       0.545        0.281
+```
+
+Multiple linear regression
+```{r}
+uschange %>%
+  as.data.frame() %>%
+  GGally::ggpairs()
+```
+# 5.2 Least squares estimation
+```{r}
+head(uschange)
+```
+
+```{r}
+fit.consMR <- tslm(
+  Consumption ~ Income + Production + Unemployment + Savings,
+  data=uschange)
+summary(fit.consMR)
+```
+
+```{r}
+autoplot(uschange[,'Consumption'], series="Data") +
+  autolayer(fitted(fit.consMR), series="Fitted") +
+  xlab("Year") + ylab("") +
+  ggtitle("Percent change in US consumption expenditure") +
+  guides(colour=guide_legend(title=" "))
+```
+
+
+```{r}
+cbind(Data = uschange[,"Consumption"],
+      Fitted = fitted(fit.consMR)) %>%
+  as.data.frame() %>%
+  ggplot(aes(x=Data, y=Fitted)) +
+    geom_point() +
+    ylab("Fitted (predicted values)") +
+    xlab("Data (actual values)") +
+    ggtitle("Percent change in US consumption expenditure") +
+    geom_abline(intercept=0, slope=1)
+```
+
+# 5.3 Evaluating the regression model
+
+```{r}
+checkresiduals(fit.consMR)
+```
+The autocorrelation plot shows a significant spike at lag 7, but it is not quite enough for the Breusch-Godfrey to be significant at the 5% level. In any case, the autocorrelation is not particularly large, and at lag 7 it is unlikely to have any noticeable impact on the forecasts or the prediction intervals. In Chapter 9 we discuss dynamic regression models used for better capturing information left in the residuals.
+
+```{r}
+df <- as.data.frame(uschange)
+df[,"Residuals"]  <- as.numeric(residuals(fit.consMR))
+df
+```
+
+
+```{r}
+p1 <- ggplot(df, aes(x=Income, y=Residuals)) +
+  geom_point()
+p2 <- ggplot(df, aes(x=Production, y=Residuals)) +
+  geom_point()
+p3 <- ggplot(df, aes(x=Savings, y=Residuals)) +
+  geom_point()
+p4 <- ggplot(df, aes(x=Unemployment, y=Residuals)) +
+  geom_point()
+gridExtra::grid.arrange(p1, p2, p3, p4, nrow=2)
+```
+
+The residuals from the multiple regression model for forecasting US consumption plotted against each predictor in Figure 5.9 seem to be randomly scattered. Therefore we are satisfied with these in this case.
+
+#Residual plots against fitted values
+
+A plot of the residuals against the fitted values should also show no pattern. If a pattern is observed, there may be “heteroscedasticity” in the errors which means that the variance of the residuals may not be constant. If this problem occurs, a transformation of the forecast variable such as a logarithm or square root may be required (see Section 3.2.)
+```{r}
+cbind(Fitted = fitted(fit.consMR),
+      Residuals=residuals(fit.consMR)) %>%
+  as.data.frame() %>%
+  ggplot(aes(x=Fitted, y=Residuals)) + geom_point()
+```
+# Spurious regression
+
+```{r}
+aussies <- window(ausair, end=2011)
+fit <- tslm(aussies ~ guinearice)
+summary(fit)
+```
+
+
+```{r}
+checkresiduals(fit)
+```
+# 5.4 Some useful predictors
+
+```{r}
+beer2 <- window(ausbeer, start=1992)
+autoplot(beer2) + xlab("Year") + ylab("Megalitres")
+```
+
+The tslm() function will automatically handle this situation if you specify the predictor season.
+```{r}
+fit.beer <- tslm(beer2 ~ trend + season)
+summary(fit.beer)
+```
+3 seanson is dummies variable for 4 quaters
+
+```{r}
+autoplot(beer2, series="Data") +
+  autolayer(fitted(fit.beer), series="Fitted") +
+  xlab("Year") + ylab("Megalitres") +
+  ggtitle("Quarterly Beer Production")
+```
+Figure 5.15: Time plot of beer production and predicted beer production.
+```{r}
+beer2
+```
+
+
+```{r}
+cbind(Data=beer2, Fitted=fitted(fit.beer)) %>%
+  as.data.frame() %>%
+  ggplot(aes(x = Data, y = Fitted,
+             colour = as.factor(cycle(beer2)))) +
+    geom_point() +
+    ylab("Fitted") + xlab("Actual values") +
+    ggtitle("Quarterly beer production") +
+    scale_colour_brewer(palette="Dark2", name="Quarter") +
+    geom_abline(intercept=0, slope=1)
+```
+Figure 5.16: Actual beer production plotted against predicted beer production.
+
+Fourier series
+```{r}
+fourier.beer <- tslm(beer2 ~ trend + fourier(beer2, K=2))
+summary(fourier.beer)
+```
+# 5.5 Selecting predictors
+```{r}
+CV(fit.consMR)
+```
+We compare these values against the corresponding values from other models. For the CV, AIC, AICc and BIC measures, we want to find the model with the lowest value; for Adjusted R2, we seek the model with the highest value.
+
+# 5.6 Forecasting with regression
+```{r}
+beer2 <- window(ausbeer, start=1992)
+fit.beer <- tslm(beer2 ~ trend + season)
+fcast <- forecast(fit.beer)
+autoplot(fcast) +
+  ggtitle("Forecasts of beer production using regression") +
+  xlab("Year") + ylab("megalitres")
+```
+```{r}
+fcast
+```
+
+Scenario based forecasting
+```{r}
+fit.consBest <- tslm(
+  Consumption ~ Income + Savings + Unemployment,
+  data = uschange)
+
+newdata <- data.frame(
+    Income = c(1, 1, 1, 1),
+    Savings = c(0.5, 0.5, 0.5, 0.5),
+    Unemployment = c(0, 0, 0, 0))
+newdata
+
+fcast.up <- forecast(fit.consBest, newdata = newdata)
+h <- 4
+newdata <- data.frame(
+    Income = rep(-1, h),
+    Savings = rep(-0.5, h),
+    Unemployment = rep(0, h))
+
+newdata
+fcast.down <- forecast(fit.consBest, newdata = newdata)
+```
+```{r}
+fcast.down
+fcast.up
+```
+
+
+```{r}
+autoplot(uschange[, 1]) +
+  ylab("% change in US consumption") +
+  autolayer(fcast.up, PI = TRUE, series = "increase") +
+  autolayer(fcast.down, PI = TRUE, series = "decrease") +
+  guides(colour = guide_legend(title = "Scenario"))
+```
+Figure 5.18: Forecasting percentage changes in personal consumption expenditure for the US under scenario based forecasting.
+
+# Prediction intervals
+```{r}
+fit.cons <- tslm(Consumption ~ Income, data = uschange)
+h <- 4
+fcast.ave <- forecast(fit.cons,
+  newdata = data.frame(
+    Income = rep(mean(uschange[,"Income"]), h)))
+fcast.up <- forecast(fit.cons,
+  newdata = data.frame(Income = rep(5, h)))
+autoplot(uschange[, "Consumption"]) +
+  ylab("% change in US consumption") +
+  autolayer(fcast.ave, series = "Average increase",
+    PI = TRUE) +
+  autolayer(fcast.up, series = "Extreme increase",
+    PI = TRUE) +
+  guides(colour = guide_legend(title = "Scenario"))
+```
+
+# 5.8 Nonlinear regression
+
+```{r}
+h <- 10
+fit.lin <- tslm(marathon ~ trend)
+fcasts.lin <- forecast(fit.lin, h = h)
+fit.exp <- tslm(marathon ~ trend, lambda = 0)
+fcasts.exp <- forecast(fit.exp, h = h)
+
+t <- time(marathon)
+t.break1 <- 1940
+t.break2 <- 1980
+tb1 <- ts(pmax(0, t - t.break1), start = 1897)
+tb2 <- ts(pmax(0, t - t.break2), start = 1897)
+
+fit.pw <- tslm(marathon ~ t + tb1 + tb2)
+t.new <- t[length(t)] + seq(h)
+tb1.new <- tb1[length(tb1)] + seq(h)
+tb2.new <- tb2[length(tb2)] + seq(h)
+
+newdata <- cbind(t=t.new, tb1=tb1.new, tb2=tb2.new) %>%
+  as.data.frame()
+fcasts.pw <- forecast(fit.pw, newdata = newdata)
+
+fit.spline <- tslm(marathon ~ t + I(t^2) + I(t^3) +
+  I(tb1^3) + I(tb2^3))
+fcasts.spl <- forecast(fit.spline, newdata = newdata)
+
+autoplot(marathon) +
+  autolayer(fitted(fit.lin), series = "Linear") +
+  autolayer(fitted(fit.exp), series = "Exponential") +
+  autolayer(fitted(fit.pw), series = "Piecewise") +
+  autolayer(fitted(fit.spline), series = "Cubic Spline") +
+  autolayer(fcasts.pw, series="Piecewise") +
+  autolayer(fcasts.lin, series="Linear", PI=FALSE) +
+  autolayer(fcasts.exp, series="Exponential", PI=FALSE) +
+  autolayer(fcasts.spl, series="Cubic Spline", PI=FALSE) +
+  xlab("Year") + ylab("Winning times in minutes") +
+  ggtitle("Boston Marathon") +
+  guides(colour = guide_legend(title = " "))
+```
+
+There is an alternative formulation of cubic splines (called natural cubic smoothing splines) that imposes some constraints, so the spline function is linear at the end, which usually gives much better forecasts without compromising the fit. In Figure 5.22, we have used the splinef() function to produce the cubic spline forecasts. This uses many more knots than we used in Figure 5.21, but the coefficients are constrained to prevent over-fitting, and the curve is linear at both ends. This has the added advantage that knot selection is not subjective. We have also used a log transformation (lambda=0) to handle the heteroscedasticity.
+
+```{r}
+marathon %>%
+  splinef(lambda=0) %>%
+  autoplot()
+```
+
+
+```{r}
+marathon %>%
+  splinef(lambda=0) %>%
+  checkresiduals()
+```
+# Chapter 6 Time series decomposition
+
+# 6.2 Moving averages
+```{r}
+autoplot(elecsales) + xlab("Year") + ylab("GWh") +
+  ggtitle("Annual electricity sales: South Australia")
+```
+
+```{r}
+ma(elecsales, 5)
+```
+
+
+```{r}
+autoplot(elecsales, series="Data") +
+  autolayer(ma(elecsales,5), series="5-MA") +
+  xlab("Year") + ylab("GWh") +
+  ggtitle("Annual electricity sales: South Australia") +
+  scale_colour_manual(values=c("Data"="grey50","5-MA"="red"),
+                      breaks=c("Data","5-MA"))
+```
+
+
+```{r}
+beer2 <- window(ausbeer,start=1992)
+ma4 <- ma(beer2, order=4, centre=FALSE)
+ma2x4 <- ma(beer2, order=4, centre=TRUE)
+```
+
+
+```{r}
+autoplot(elecequip, series="Data") +
+  autolayer(ma(elecequip, 12), series="12-MA") +
+  xlab("Year") + ylab("New orders index") +
+  ggtitle("Electrical equipment manufacturing (Euro area)") +
+  scale_colour_manual(values=c("Data"="grey","12-MA"="red"),
+                      breaks=c("Data","12-MA"))
+```
+
+
+```{r}
+x<-c(1,5,2,8,6,3,2,4,7)
+ma(x,order= 4)
+ma(x,order= 4,centre=FALSE)
+```
+
+
+```{r}
+plot(wineind)
+sm <- ma(wineind,order=12)
+lines(sm,col="red")
+sm2 <- ma(wineind,order=12,centre=FALSE)
+lines(sm2,col="blue")
+```
+
+# 6.3 Classical decomposition
+```{r}
+elecequip %>% decompose(type="multiplicative") %>%
+  autoplot() + xlab("Year") +
+  ggtitle("Classical multiplicative decomposition
+    of electrical equipment index")
+```
+
+# 6.4 X11 decomposition
+
+This method is based on classical decomposition, but includes many extra steps and features in order to overcome the drawbacks of classical decomposition that were discussed in the previous section. In particular, trend-cycle estimates are available for all observations including the end points, and the seasonal component is allowed to vary slowly over time. X11 also has some sophisticated methods for handling trading day variation, holiday effects and the effects of known predictors. It handles both additive and multiplicative decomposition. The process is entirely automatic and tends to be highly robust to outliers and level shifts in the time series.
+```{r}
+#install.packages("seasonal")
+library(seasonal)
+elecequip %>% seas(x11="") -> fit
+autoplot(fit) +
+  ggtitle("X11 decomposition of electrical equipment index")
+```
+
+
+```{r}
+autoplot(elecequip, series="Data") +
+  autolayer(trendcycle(fit), series="Trend") +
+  autolayer(seasadj(fit), series="Seasonally Adjusted") +
+  xlab("Year") + ylab("New orders index") +
+  ggtitle("Electrical equipment manufacturing (Euro area)") +
+  scale_colour_manual(values=c("gray","blue","red"),
+             breaks=c("Data","Seasonally Adjusted","Trend"))
+```
+
+
+```{r}
+fit %>% seasonal() %>% ggsubseriesplot() + ylab("Seasonal")
+```
+# 6.5 SEATS decomposition
+
+“SEATS” stands for “Seasonal Extraction in ARIMA Time Series” (ARIMA models are discussed in Chapter 8). This procedure was developed at the Bank of Spain, and is now widely used by government agencies around the world. The procedure works only with quarterly and monthly data. So seasonality of other kinds, such as daily data, or hourly data, or weekly data, require an alternative approach.
+```{r}
+library(seasonal)
+elecequip %>% seas() %>%
+autoplot() +
+  ggtitle("SEATS decomposition of electrical equipment index")
+```
+
+# 6.6 STL decomposition
+```{r}
+elecequip %>%
+  stl(t.window=13, s.window="periodic", robust=TRUE) %>%
+  autoplot()
+```
+
+# 6.8 Forecasting with decomposition
+
+seasadj() : Returns seasonally adjusted data constructed by removing the seasonal component.
+```{r}
+fit <- stl(elecequip, t.window=13, s.window="periodic",
+  robust=TRUE) # decomposition with stl
+fit %>% seasadj() %>% naive() %>%
+  autoplot() + ylab("New orders index") +
+  ggtitle("Naive forecasts of seasonally adjusted data")
+```
+Figure 6.14: Naïve forecasts of the seasonally adjusted data obtained from an STL decomposition of the electrical equipment orders data.
+```{r}
+fit %>% forecast(method="naive") %>%
+  autoplot() + ylab("New orders index")
+```
+Figure 6.15: Forecasts of the electrical equipment orders data based on a naïve forecast of the seasonally adjusted data and a seasonal naïve forecast of the seasonal component, after an STL decomposition of the data.
+
+# **Chapter 8 Exponential smoothing**
+# 7.1 Simple exponential smoothing
+The simplest of the exponentially smoothing methods is naturally called simple exponential smoothing (SES)13. This method is suitable for forecasting data with no clear trend or seasonal pattern
+
+```{r}
+#install.packages("fpp3")
+library(fpp3)
+```
+
+
+# To obtain forecasts from an ETS model, we use the forecast() function.
+```{r}
+aus_holidays <- tourism %>%
+  filter(Purpose == "Holiday") %>%
+  summarise(Trips = sum(Trips))
+aus_holidays
+```
+We now employ the ETS statistical framework to forecast Australian holiday tourism over the period 2016–2019. We let the ETS() function select the model by minimising the AICc.
+
+```{r}
+fit <- aus_holidays %>%
+  model(ETS(Trips))
+report(fit)
+```
+```{r}
+components(fit) %>%
+  autoplot() +
+  ggtitle("ETS(M,N,M) components")
+```
+```{r}
+residuals(fit)
+residuals(fit, type = "response")
+```
+
+```{r}
+fit %>%
+  forecast(h = 8) %>%
+  autoplot(aus_holidays) +
+  ylab("Domestic holiday visitors in Australia (thousands)")
+```
+
+# **Chap 9 ARIMA**
+```{r}
+us_change %>% autoplot(Consumption) +
+  labs(x = "Year", y = "Quarterly percentage change", title = "US consumption")
+```
+
+
+```{r}
+fit <- us_change %>%
+  model(ARIMA(Consumption ~ PDQ(0,0,0)))
+report(fit)
+#> Series: Consumption 
+#> Model: ARIMA(1,0,3) w/ mean 
+#> 
+#> Coefficients:
+#>          ar1      ma1     ma2     ma3  constant
+#>       0.5731  -0.3617  0.0925  0.1934    0.3160
+#> s.e.  0.1503   0.1607  0.0787  0.0824    0.0371
+#> 
+#> sigma^2 estimated as 0.3334:  log likelihood=-169.9
+#> AIC=351.8   AICc=352.2   BIC=371.5
+```
+
+Choose p and q value from ACF and PACF plot
+```{r}
+us_change %>% ACF(Consumption) %>% autoplot()
+# determine p value
+```
+
+
+```{r}
+us_change %>% PACF(Consumption) %>% autoplot()
+# determine q value
+```
+
+
+```{r}
+fit2 <- us_change %>%
+  model(ARIMA(Consumption ~ pdq(3,0,0) + PDQ(0,0,0)))
+report(fit2)
+#> Series: Consumption 
+#> Model: ARIMA(3,0,0) w/ mean 
+#> 
+#> Coefficients:
+#>          ar1     ar2     ar3  constant
+#>       0.2027  0.1605  0.2252    0.3046
+#> s.e.  0.0691  0.0697  0.0690    0.0400
+#> 
+#> sigma^2 estimated as 0.3332:  log likelihood=-170.3
+#> AIC=350.6   AICc=350.9   BIC=367
+```
+This model is actually slightly better than the model identified by ARIMA() (with an AICc value of 350.91 compared to 352.21). The ARIMA() function did not find this model because it does not consider all possible models in its search. You can make it work harder by using the arguments stepwise=FALSE and approximation=FALSE:
+
+```{r}
+fit3 <- us_change %>%
+  model(ARIMA(Consumption ~ PDQ(0,0,0),
+              stepwise = FALSE, approximation = FALSE))
+report(fit3)
+#> Series: Consumption 
+#> Model: ARIMA(3,0,0) w/ mean 
+#> 
+#> Coefficients:
+#>          ar1     ar2     ar3  constant
+#>       0.2027  0.1605  0.2252    0.3046
+#> s.e.  0.0691  0.0697  0.0690    0.0400
+#> 
+#> sigma^2 estimated as 0.3332:  log likelihood=-170.3
+#> AIC=350.6   AICc=350.9   BIC=367
+```
+
+# 9.7 ARIMA modelling in R
+We will apply this procedure to the seasonally adjusted electrical equipment orders data shown in Figure 9.13.
+STL: Seasonal Decomposition Of Time Series By Loess
+```{r}
+elec_equip <- as_tsibble(fpp2::elecequip)
+elec_dcmp <- elec_equip %>%
+  model(STL(value ~ season(window="periodic"))) %>%
+  components() %>%
+  select(-.model) %>%
+  as_tsibble()
+elec_dcmp %>%
+  autoplot(season_adjust)
+```
+1.The time plot shows some sudden changes, particularly the big drop in 2008/2009. These changes are due to the global economic environment. Otherwise there is nothing unusual about the time plot and there appears to be no need to do any data adjustments.
+
+2.There is no evidence of changing variance, so we will not do a Box-Cox transformation.
+
+3.The data are clearly non-stationary, as the series wanders up and down for long periods. Consequently, we will take a first difference of the data. The differenced data are shown in Figure 9.14. These look stationary, and so we will not consider further differences.
+```{r}
+elec_dcmp %>%
+  gg_tsdisplay(difference(season_adjust), plot_type='partial')
+```
+The PACF shown in Figure 9.14 is suggestive of an AR(3) model. So an initial candidate model is an ARIMA(3,1,0). There are no other obvious candidate models.
+
+We fit an ARIMA(3,1,0) model along with variations including ARIMA(4,1,0), ARIMA(2,1,0), ARIMA(3,1,1), etc. Of these, the ARIMA(3,1,1) has a slightly smaller AICc value.
+
+```{r}
+fit <- elec_dcmp %>%
+  model(
+    arima = ARIMA(season_adjust ~ pdq(3,1,1) + PDQ(0,0,0))
+  )
+report(fit)
+#> Series: season_adjust 
+#> Model: ARIMA(3,1,1) 
+#> 
+#> Coefficients:
+#>          ar1     ar2     ar3      ma1
+#>       0.0044  0.0916  0.3698  -0.3921
+#> s.e.  0.2201  0.0984  0.0669   0.2426
+#> 
+#> sigma^2 estimated as 9.577:  log likelihood=-492.7
+#> AIC=995.4   AICc=995.7   BIC=1012
+```
+
+
+```{r}
+fit %>% gg_tsresiduals()
+```
+Figure 9.15: Residual plots for the ARIMA(3,1,1) model.
+```{r}
+augment(fit) %>%
+  features(.resid, ljung_box, lag = 24, dof = 4)
+#> # A tibble: 1 x 3
+#>   .model lb_stat lb_pvalue
+#>   <chr>    <dbl>     <dbl>
+#> 1 arima     24.0     0.241
+```
+
+
+```{r}
+fit %>% forecast() %>% autoplot(elec_dcmp)
+```
+
+# 9.9 Seasonal ARIMA models
+```{r}
+eu_retail <- as_tsibble(fpp2::euretail)
+eu_retail %>% autoplot(value) + ylab("Retail index") + xlab("Year")
+```
+The data are clearly non-stationary, with some seasonality, so we will first take a seasonal difference. The seasonally differenced data are shown in Figure 9.19. These also appear to be non-stationary, so we take an additional first difference, shown in Figure 9.20.
+
+```{r}
+eu_retail %>% gg_tsdisplay(difference(value, 4), plot_type='partial')
+```
+Figure 9.19: Seasonally differenced European retail trade index.
+
+```{r}
+eu_retail %>% gg_tsdisplay(value %>% difference(4) %>% difference(),
+  plot_type='partial')
+```
+Figure 9.20: Double differenced European retail trade index.
+Our aim now is to find an appropriate ARIMA model based on the ACF and PACF shown in Figure 9.20. The significant spike at lag 1 in the ACF suggests a non-seasonal MA(1) component, and the significant spike at lag 4 in the ACF suggests a seasonal MA(1) component. Consequently, we begin with an ARIMA(0,1,1)(0,1,1) 4 model, indicating a first and seasonal difference, and non-seasonal and seasonal MA(1) components. The residuals for the fitted model are shown in Figure 9.21. (By analogous logic applied to the PACF, we could also have started with an ARIMA(1,1,0)(1,1,0) 4m odel.)
+```{r}
+fit <- eu_retail %>%
+  model(arima = ARIMA(value ~ pdq(0,1,1) + PDQ(0,1,1)))
+fit %>% gg_tsresiduals()
+```
+Figure 9.21: Residuals from the fitted ARIMA(0,1,1)(0,1,1)4 model for the European retail trade index data.
+
+ACF show significant spikes at lag 3 so need to change model to ARIMA (0,1,3)(0,1,1)4
+```{r}
+fit <- eu_retail %>%
+  model(ARIMA(value ~ pdq(0,1,3) + PDQ(0,1,1)))
+fit %>% gg_tsresiduals()
+```
+
+
+```{r}
+fit %>% forecast(h=12) %>% autoplot(eu_retail)
+```
+Figure 9.23: Forecasts of the European retail trade index data using the ARIMA(0,1,3)(0,1,1) 4  model. 80% and 95% prediction intervals are shown.
+
+# AUTOMATICAL SELECT PDQ FOR ARIMA MODEL
+We could have also used ARIMA() without specifying the lag orders to automatically select them. It would have given the same result.
+
+```{r}
+eu_retail %>%
+  model(ARIMA(value))
+```
+
+
+```{r}
+library(forecast)
+fit <- auto.arima(eu_retail)
+fit
+```
+Exactly the same as manual select above
+
+```{r}
+plot(forecast(fit,h=5))
+```
+
+# Example: Corticosteroid drug sales in Australia
+```{r}
+h02 <- PBS %>%
+  filter(ATC2 == "H02") %>%
+  summarise(Cost = sum(Cost)/1e6)
+h02 %>%
+  mutate(log(Cost)) %>%
+  gather() %>%
+  ggplot(aes(x = Month, y = value)) +
+  geom_line() +
+  facet_grid(key ~ ., scales = "free_y") +
+  xlab("Year") + ylab("") +
+  ggtitle("Cortecosteroid drug scripts (H02)")
+```
+Data from July 1991 to June 2008 are plotted in Figure 9.24. There is a small increase in the variance with the level, so we take logarithms to stabilise the variance.
+
+The data are strongly seasonal and obviously non-stationary, so seasonal differencing will be used. The seasonally differenced data are shown in Figure 9.25. It is not clear at this point whether we should do another difference or not. We decide not to, but the choice is not obvious.
+
+The last few observations appear to be different (more variable) from the earlier data. This may be due to the fact that data are sometimes revised when earlier sales are reported late.
+```{r}
+h02 %>% gg_tsdisplay(difference(log(Cost), 12), plot_type='partial', lag_max = 24)
+```
+In the plots of the seasonally differenced data, there are spikes in the PACF at lags 12 and 24, but nothing at seasonal lags in the ACF. This may be suggestive of a seasonal AR(2) term. In the non-seasonal lags, there are three significant spikes in the PACF, suggesting a possible AR(3) term. The pattern in the ACF is not indicative of any simple model.
+
+```{r}
+fit <- h02 %>%
+  model(ARIMA(log(Cost) ~ 0 + pdq(3,0,1) + PDQ(0,1,2)))
+report(fit)
+```
+
+```{r}
+fit %>% gg_tsresiduals(lag_max=36)
+```
+
+
+```{r}
+augment(fit) %>%
+  features(.resid, ljung_box, lag = 36, dof = 6)
+```
+
+
+```{r}
+h02 %>%
+  model(ARIMA(log(Cost) ~ 0 + pdq(3,0,1) + PDQ(0,1,2))) %>%
+  forecast() %>%
+  autoplot(h02) +
+    ylab("H02 sales (million scripts)") + xlab("Year")
+```
+
+TRY AUTO ARIMA: (better AIC ?)
+```{r}
+fit <- auto.arima(h02)
+fit
+```
+
+```{r}
+checkresiduals(fit)
+```
+```{r}
+forecast_1<-forecast(fit,xreg = h02)
+forecast_1
+```
+# 9.10 ARIMA vs ETS
+
+```{r}
+# Consider the cement data beginning in 1988
+cement <- aus_production %>%
+  filter(year(Quarter) >= 1988)
+
+# Use 20 years of the data as the training set
+train <- cement %>%
+  filter(year(Quarter) <= 2007)
+
+```
+
+
+```{r}
+fit_arima <- train %>% model(ARIMA(Cement))
+report(fit_arima)
+gg_tsresiduals(fit_arima, lag_max = 16)
+```
+Figure 9.30: Residual diagnostic plots for the ARIMA model fitted to the quarterly cement production training data.
+
+```{r}
+augment(fit_arima) %>%
+  features(.resid, ljung_box, lag = 16, dof = 6)
+```
+
+
+```{r}
+fit_ets <- train %>% model(ETS(Cement))
+report(fit_ets)
+fit_ets %>% gg_tsresiduals(lag_max = 16)
+```
+Figure 9.31: Residual diagnostic plots for the ETS model fitted to the quarterly cement production training data.
+
+```{r}
+augment(fit_ets) %>%
+  features(.resid, ljung_box, lag = 16, dof = 6)
+```
+
+
+```{r}
+# Generate forecasts and compare accuracy over the test set
+bind_rows(
+  fit_arima %>% accuracy(),
+  fit_ets %>% accuracy(),
+  fit_arima %>% forecast(h = "2 years 6 months") %>%
+    accuracy(cement),
+  fit_ets %>% forecast(h = "2 years 6 months") %>%
+    accuracy(cement)
+)
+```
+
+
+```{r}
+# Generate forecasts from an ARIMA model
+cement %>% model(ARIMA(Cement)) %>% forecast(h="3 years") %>% autoplot(cement)
+```
+
+# **Chapter 10 Dynamic regression models**
+```{r}
+library(fpp3)
+```
+
+```{r}
+us_change %>%
+  gather("var", "value", Consumption, Income) %>%
+  ggplot(aes(x = Quarter, y = value)) +
+  geom_line() +
+  facet_grid(vars(var), scales = "free_y") +
+  xlab("Year") + ylab(NULL) +
+  ggtitle("Quarterly changes in US consumption and personal income")
+```
+
+
+```{r}
+fit <- us_change %>%
+  model(ARIMA(Consumption ~ Income))
+report(fit)
+```
+
+```{r}
+bind_rows(
+  `Regression Errors` = as_tibble(residuals(fit, type="regression")),
+  `ARIMA Errors` = as_tibble(residuals(fit, type="innovation")),
+  .id = "type"
+) %>%
+  ggplot(aes(x = Quarter, y = .resid)) +
+  geom_line() +
+  facet_grid(vars(type), scales = "free_y") +
+  xlab("Year") + ylab(NULL)
+```
+```{r}
+fit %>% gg_tsresiduals()
+```
+Figure 10.3: The residuals (i.e., the ARIMA errors) are not significantly different from white noise.
+
+```{r}
+augment(fit) %>%
+  features(.resid, ljung_box, dof = 5, lag = 8)
+#> # A tibble: 1 x 3
+#>   .model                      lb_stat lb_pvalue
+#>   <chr>                         <dbl>     <dbl>
+#> 1 ARIMA(Consumption ~ Income)    5.21     0.157
+```
+
+# 10.3 Forecasting
+Example: US Personal Consumption and Income
+
+We will calculate forecasts for the next eight quarters assuming that the future percentage changes in personal disposable income will be equal to the mean percentage change from the last forty years.
+```{r}
+ new_data(us_change, 8)
+us_change_future <- new_data(us_change, 8) %>% mutate(Income = mean(us_change$Income))
+us_change_future
+```
+
+
+```{r}
+forecast(fit, new_data = us_change_future) %>%
+  autoplot(us_change) + xlab("Year") +
+  ylab("Percentage change")
+```
+Figure 10.4: Forecasts obtained from regressing the percentage change in consumption expenditure on the percentage change in disposable income, with an ARIMA(1,0,2) error model.
+
+Example: Forecasting electricity demand
+
+```{r}
+vic_elec_daily <- vic_elec %>%
+  filter(year(Time) == 2014) %>%
+  index_by(Date = date(Time)) %>%
+  summarise(
+    Demand = sum(Demand)/1e3,
+    Temperature = max(Temperature),
+    Holiday = any(Holiday)
+  ) %>%
+  mutate(Day_Type = case_when(
+    Holiday ~ "Holiday",
+    wday(Date) %in% 2:6 ~ "Weekday",
+    TRUE ~ "Weekend"
+  ))
+
+vic_elec_daily %>%
+  ggplot(aes(x=Temperature, y=Demand, colour=Day_Type)) +
+    geom_point() +
+    ylab("Electricity demand (GW)") +
+    xlab("Maximum daily temperature")
+```
+
+
+```{r}
+vic_elec_daily
+```
+
+
+```{r}
+fit <- vic_elec_daily %>%
+  model(ARIMA(Demand ~ Temperature + I(Temperature^2) + (Day_Type=="Weekday")))
+
+report(fit)
+```
+```{r}
+fit %>% gg_tsresiduals()
+```
+
+
+```{r}
+augment(fit) %>%
+  features(.resid, ljung_box, dof = 8, lag = 14)
+```
+
+
+```{r}
+vic_elec_future <- new_data(vic_elec_daily, 14) %>%
+  mutate(
+    Temperature = 26,
+    Holiday = c(TRUE, rep(FALSE, 13)),
+    Day_Type = case_when(
+      Holiday ~ "Holiday",
+      wday(Date) %in% 2:6 ~ "Weekday",
+      TRUE ~ "Weekend"
+    )
+  )
+vic_elec_future
+```
+
+
+
+```{r}
+forecast(fit, vic_elec_future) %>%
+  autoplot(vic_elec_daily) + ylab("Electricity demand (GW)")
+```
+# 10.4 Stochastic and deterministic trends
+
+Example: International visitors to Australia
+```{r}
+aus_visitors <- as_tsibble(fpp2::austa)
+aus_visitors %>%
+  autoplot(value) +
+  labs(x = "Year", y = "millions of people",
+       title = "Total annual international visitors to Australia")
+```
+```{r}
+aus_visitors
+```
+
+
+```{r}
+fit_deterministic <- aus_visitors %>%
+  model(deterministic = ARIMA(value ~ trend() + pdq(d = 0)))
+report(fit_deterministic)
+```
+
+```{r}
+fit_stochastic <- aus_visitors %>%
+  model(stochastic = ARIMA(value ~ pdq(d=1)))
+report(fit_stochastic)
+```
+```{r}
+bind_cols(fit_deterministic, fit_stochastic)
+```
+
+```{r}
+bind_cols(fit_deterministic, fit_stochastic) %>%
+  forecast(h = 10) %>%
+  autoplot(aus_visitors) +
+  labs(x = "Year", y = "Visitors to Australia (millions)",
+       title = "Forecasts from trend models")
+```
+There is an implicit assumption with deterministic trends that the slope of the trend is not going to change over time. On the other hand, stochastic trends can change, and the estimated growth is only assumed to be the average growth over the historical period, not necessarily the rate of growth that will be observed into the future. Consequently, it is safer to forecast with stochastic trends, especially for longer forecast horizons, as the prediction intervals allow for greater uncertainty in future growth.
+
+# 10.5 Dynamic harmonic regression
+```{r}
+aus_cafe <- aus_retail %>%
+  filter(
+    Industry == "Cafes, restaurants and takeaway food services",
+    year(Month) %in% 2004:2018
+  ) %>%
+  summarise(Turnover = sum(Turnover))
+aus_cafe
+```
+```{r}
+autoplot(aus_cafe)
+```
+
+
+```{r}
+fit <- aus_cafe %>%
+  model(
+    `K = 1` = ARIMA(log(Turnover) ~ fourier(K = 1) + PDQ(0,0,0)),
+    `K = 2` = ARIMA(log(Turnover) ~ fourier(K = 2) + PDQ(0,0,0)),
+    `K = 3` = ARIMA(log(Turnover) ~ fourier(K = 3) + PDQ(0,0,0)),
+    `K = 4` = ARIMA(log(Turnover) ~ fourier(K = 4) + PDQ(0,0,0)),
+    `K = 5` = ARIMA(log(Turnover) ~ fourier(K = 5) + PDQ(0,0,0)),
+    `K = 6` = ARIMA(log(Turnover) ~ fourier(K = 6) + PDQ(0,0,0))
+  )
+
+```
+
+
+```{r}
+fit %>%
+  forecast(h = "2 years") %>%
+  autoplot(aus_cafe) +
+  facet_wrap(vars(.model), ncol = 2) +
+  guides(colour = FALSE) +
+  geom_label(
+    aes(x = yearmonth("2007 Jan"), y = 4250, label = paste0("AICc = ", format(AICc))),
+    data = glance(fit)
+  )
+```
+Figure 10.11: Using Fourier terms and ARIMA errors for forecasting monthly expenditure on eating out in Australia.
+
+# 10.6 Lagged predictors
+
+```{r}
+insurance <- as_tsibble(fpp2::insurance, pivot_longer = FALSE)
+
+insurance %>%
+  gather("key", "value", Quotes, TV.advert) %>%
+  ggplot(aes(x = index, y = value)) +
+  geom_line() +
+  facet_grid(vars(key), scales = "free_y") +
+  labs(x = "Year", y = NULL,
+       title = "Insurance advertising and quotations")
+```
+Figure 10.12: Numbers of insurance quotations provided per month and the expenditure on advertising per month.
+```{r}
+insurance
+```
+We will consider including advertising expenditure for up to four months; that is, the model may include advertising expenditure in the current month, and the three months before that. When comparing models, it is important that they all use the same training set. In the following code, we exclude the first three months in order to make fair comparisons.
+```{r}
+insurance %>%
+  # Restrict data so models use same fitting period
+  mutate(Quotes = c(NA,NA,NA,Quotes[4:40])) 
+```
+
+```{r}
+fit <- insurance %>%
+  # Restrict data so models use same fitting period
+  mutate(Quotes = c(NA,NA,NA,Quotes[4:40])) %>%
+  # Estimate models
+  model(
+    lag0 = ARIMA(Quotes ~ pdq(d = 0) + TV.advert),
+    lag1= ARIMA(Quotes ~ pdq(d = 0) + TV.advert + lag(TV.advert)),
+    lag2= ARIMA(Quotes ~ pdq(d = 0) + TV.advert + lag(TV.advert) + lag(TV.advert, 2)),
+    lag3= ARIMA(Quotes ~ pdq(d = 0) + TV.advert + lag(TV.advert) + lag(TV.advert, 2) + lag(TV.advert, 3))
+  )
+```
+
+
+```{r}
+glance(fit)
+```
+The best model (with the smallest AICc value) has two predictors; that is, it includes advertising only in the current month and the previous month. So we now re-estimate that model, but using all the available data.
+
+```{r}
+fit_best <- insurance %>%
+  model(ARIMA(Quotes ~ pdq(d = 0) + TV.advert + lag(TV.advert)))
+report(fit_best)
+```
+
+
+```{r}
+insurance_future <- new_data(insurance, 20) %>%
+  mutate(TV.advert = 8)
+
+fit_best %>%
+  forecast(insurance_future) %>%
+  autoplot(insurance) + ylab("Quotes") +
+  ggtitle("Forecast quotes with future advertising set to 8")
+```
+Figure 10.13: Forecasts of monthly insurance quotes, assuming that the future advertising expenditure is 8 units in each future month.
+
+```{r}
+```
+
+```{r}
+```
+

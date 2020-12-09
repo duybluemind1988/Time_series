@@ -1,0 +1,164 @@
+---
+title: "time_series_STAT510"
+output: html_document
+---
+# **TIME SERIES STAT 510**
+#**Lesson 1: Time Series Basics**
+
+One of the simplest ARIMA type models is a model in which we use a linear model to predict the value at the present time using the value at the previous time. This is called an AR(1) model, standing for autoregressive model of order 1. The order of the model indicates how many previous times we use to predict the present time.
+# 1.3 R Code for Two Examples in Lessons 1.1 and 1.2
+#Lessons 1.1:
+Below is R code that will accomplish these tasks. The first line reads the data from a file named quakes.dat. The data are listed in time order from left to right in the lines of the file. If you were to download the file, you should download it into a folder that you create for storing course data. Then in R, change the working directory to be this folder.
+```{r}
+x=scan("quakes.dat")
+x=ts(x) #this makes sure R knows that x is a time series
+plot(x, type="b") #time series plot of x with points marked as "o"
+```
+
+- There is no consistent trend (upward or downward) over the entire time span. The series appears to slowly wander up and down. The horizontal line drawn at quakes = 20.2 indicates the mean of the series. Notice that the series tends to stay on the same side of the mean (above or below) for a while and then wanders to the other side.
+- Almost by definition, there is no seasonality as the data are annual data.
+- There are no obvious outliers.
+- It’s difficult to judge whether the variance is constant or not.
+```{r}
+library(astsa) # See note 1 below
+lag1.plot(x,1) # Plots x versus lag 1 of x.
+```
+
+
+```{r}
+acf(x, xlim=c(1,19)) # Plots the ACF of x for lags 1 to 19
+```
+```{r}
+xlag1=stats::lag(x,-1) # Creates a lag 1 of x variable. See note 2
+xlag1
+```
+2.Note the negative value for the lag in xlag1=lag(x,−1) To lag back in time in R, use a negative lag.
+```{r}
+y=cbind(x,xlag1) # See note 3 below
+class(y)
+head(y)
+```
+3.This is a bit tricky. For whatever reason, R has to bind together a variable with its lags for the lags to be in the proper connection with the original variable. The cbind and the ts.intersect commands both accomplish this task. In the code above, the lagged variable and the original variable become the first and second columns of a matrix named y. The regression command (lm) uses these two columns of y as the response and predictor variables in the regression.
+
+```{r}
+#ar1fit=lm(y[,1]~y[,2])#Does regression, stores results object named ar1fit
+ar1fit=lm( x ~ xlag1, data=y)#Does regression, stores results object named ar1fit
+summary(ar1fit) # This lists the regression results
+```
+quakes = 9.19 + 0.543 lag1
+
+
+```{r}
+plot(ar1fit$fit,ar1fit$residuals) #plot of residuals versus fits
+abline(h=0, col="blue")
+```
+
+
+```{r}
+acf(ar1fit$residuals, xlim=c(1,18)) # ACF of the residuals for lags 1 to 18
+```
+# Lesson 1.2
+An example in Lesson 1.2 for this week concerned the weekly cardiovascular mortality rate in Los Angeles County. We used a first difference to account for a linear trend and determine that the first differences may have an AR(1) model.
+```{r}
+mort=scan("cmort.dat")
+plot(mort, type="o") # plot of mortality rate
+```
+
+```{r}
+mort=ts(mort)
+mortdiff=diff(mort,1) # creates a variable = x(t) – x(t-1)
+print("original")
+head(mort)
+print("after diff 1")
+head(mortdiff)
+```
+
+```{r}
+plot(mortdiff,type="o") # plot of first differences
+```
+
+```{r}
+acf(mortdiff,xlim=c(1,24)) # plot of first differences, for 24 lags
+```
+
+
+```{r}
+mortdifflag1=stats::lag(mortdiff,-1)
+y=cbind(mortdiff,mortdifflag1) # bind first differences and lagged first differences
+head(y)
+```
+
+```{r}
+mortdiffar1=lm(y[,1]~y[,2]) # AR(1) regression for first differences
+summary(mortdiffar1) # regression results
+```
+
+```{r}
+acf(mortdiffar1$residuals, xlim = c(1,24)) # ACF of residuals for 24 lags. 
+```
+
+#**Lesson 2: MA Models, Partial Autocorrelation, Notational Conventions**
+
+In Example 1, we plotted the theoretical ACF of the model , and then simulated n = 150 values from this model and plotted the sample time series and the sample ACF for the simulated data. The R commands used to plot the theoretical ACF were:
+
+```{r}
+xc=arima.sim(n=150, list(ma=c(0.7))) #Simulates n = 150 values from MA(1)
+x=xc+10 # adds 10 to make mean = 10. Simulation defaults to mean = 0.
+plot(x,type="b", main="Simulated MA(1) data")
+```
+
+
+```{r}
+acf(x, xlim=c(1,10), main="ACF for simulated sample data") 
+```
+Theoretical Properties of a Time Series with an MA(2) Model Section
+
+```{r}
+acfma2=ARMAacf(ma=c(0.5,0.3), lag.max=10)
+acfma2
+lags=0:10
+plot(lags,acfma2,xlim=c(1,10), ylab="r",type="h", main = "ACF for MA(2) with theta1 = 0.5,theta2=0.3")
+abline(h=0)
+
+```
+
+
+```{r}
+xc=arima.sim(n=150, list(ma=c(0.5, 0.3)))
+x=xc+10
+plot(x, type="b", main = "Simulated MA(2) Series")
+```
+
+
+```{r}
+acf(x, xlim=c(1,10), main="ACF for simulated MA(2) Data")
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+# 2.2 Partial Autocorrelation Function (PACF)
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
